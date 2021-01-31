@@ -1,0 +1,232 @@
+From be12c5163f565a25c5bb4dbdcceaca7960ed76af Mon Sep 17 00:00:00 2001
+From: elsemieni <elsemi.en.i@gmail.com>
+Date: Sat, 30 Jan 2021 23:32:44 -0300
+Subject: [PATCH 1/2] Add plugin
+
+---
+ src/dynrpg.cpp                  |   2 +
+ src/dynrpg_marbleenloadsave.cpp | 133 ++++++++++++++++++++++++++++++++
+ src/dynrpg_marbleenloadsave.h   |  24 ++++++
+ 3 files changed, 159 insertions(+)
+ create mode 100644 src/dynrpg_marbleenloadsave.cpp
+ create mode 100644 src/dynrpg_marbleenloadsave.h
+
+diff --git a/src/dynrpg.cpp b/src/dynrpg.cpp
+index b2137bbe..09d9f463 100644
+--- a/src/dynrpg.cpp
++++ b/src/dynrpg.cpp
+@@ -25,6 +25,7 @@
+ #include "player.h"
+ 
+ #include "dynrpg_easyrpg.h"
++#include "dynrpg_marbleenloadsave.h"
+ 
+ #include <cstring>
+ #include <fstream>
+@@ -184,6 +185,7 @@ static std::string ParseToken(const std::string& token, const std::string& funct
+ 
+ void create_all_plugins() {
+ 	plugins.emplace_back(new DynRpg::EasyRpgPlugin());
++    plugins.emplace_back(new DynRpg::MarbleenLoadSavePlugin());
+ 
+ 	for (auto& plugin : plugins) {
+ 		plugin->RegisterFunctions();
+diff --git a/src/dynrpg_marbleenloadsave.cpp b/src/dynrpg_marbleenloadsave.cpp
+new file mode 100644
+index 00000000..333f2a96
+--- /dev/null
++++ b/src/dynrpg_marbleenloadsave.cpp
+@@ -0,0 +1,133 @@
++// Headers
++#include <map>
++
++#include "dynrpg_marbleenloadsave.h"
++#include "main_data.h"
++#include "game_variables.h"
++#include "game_switches.h"
++#include "utils.h"
++#include "version.h"
++#include "filefinder.h"
++#include "scene_save.h"
++#include "game_interpreter.h"
++#include "game_map.h"
++
++#include <lcf/data.h>
++#include <lcf/lsd/reader.h>
++#include <lcf/reader_util.h>
++#include <player.h>
++
++
++static bool MarbleenLoadSavePlugin_save(dyn_arg_list args) {
++
++    int saveSlot;
++
++    //validar
++    auto func = "marbleen_save";
++    bool okay = false;
++    std::tie(saveSlot) = DynRpg::ParseArgs<int>(func, args, &okay);
++
++    if (okay) {
++
++        //cargar save directory tree
++        std::shared_ptr<FileFinder::DirectoryTree> tree = FileFinder::CreateSaveDirectoryTree();
++
++        //aca va bizarro
++        Scene_Save save_scene;
++        save_scene.Save(*tree, saveSlot);
++
++    } else {
++        //fallo la validacion
++        Output::Warning("[marbleen_save] Fallo la validacion");
++    }
++
++    //listeilor
++    return true;
++
++}
++
++// ================================================================================
++static bool MarbleenLoadSavePlugin_load(dyn_arg_list args) {
++
++    int saveSlot;
++
++    //validar
++    auto func = "marbleen_load";
++    bool okay = false;
++    std::tie(saveSlot) = DynRpg::ParseArgs<int>(func, args, &okay);
++
++    if (okay) {
++
++        //cargar save directory tree
++        std::shared_ptr<FileFinder::DirectoryTree> tree = FileFinder::CreateSaveDirectoryTree();
++
++        //aca va bizarro
++        std::string save_name = FileFinder::FindDefault(*tree, fmt::format("Save{:02d}.lsd", saveSlot));
++        Player::LoadSavegame(save_name, saveSlot);
++
++    } else {
++        //fallo la validacion
++        Output::Warning("[marbleen_load] Fallo la validacion");
++    }
++
++    //listeilor
++    return true;
++
++}
++// ================================================================================
++
++static bool MarbleenLoadSavePlugin_savegetvar(dyn_arg_list args) {
++
++    int saveSlot, variableId, destVar;
++
++    //validar
++    auto func = "marbleen_savegetvar";
++    bool okay = false;
++    std::tie(saveSlot, variableId, destVar) = DynRpg::ParseArgs<int, int, int>(func, args, &okay);
++
++    if (okay) {
++
++        //cargar save directory tree
++        std::shared_ptr<FileFinder::DirectoryTree> tree = FileFinder::CreateSaveDirectoryTree();
++
++        //aca va bizarro
++        std::stringstream ss;
++        ss << "Save" << (saveSlot <= 8 ? "0" : "") << (saveSlot) << ".lsd";
++        std::string file = FileFinder::FindDefault(*tree, ss.str());
++
++        if (!file.empty()) {
++            // File found
++            auto save_stream = FileFinder::OpenInputStream(file);
++            std::unique_ptr<lcf::rpg::Save> savegame = lcf::LSD_Reader::Load(save_stream, Player::encoding);
++
++            if (savegame) {
++                Main_Data::game_variables->Set(destVar, savegame->system.variables[variableId - 1]);
++            } else {
++                Output::Warning("[marbleen_savegetvar] Archivo corrupto");
++                Main_Data::game_variables->Set(destVar, -1);
++            }
++        } else {
++            //Output::Warning("[Disturbo_savegetvar] Archivo no encontrado");
++            Main_Data::game_variables->Set(destVar, -1);
++        }
++    } else {
++        //fallo la validacion
++        Output::Warning("[marbleen_savegetvar] Fallo la validacion");
++    }
++
++    //listeilor
++    return true;
++
++}
++// ================================================================================
++
++/**
++ * Define las funciones que este puede llamar desde los comentarios.
++ */
++void DynRpg::MarbleenLoadSavePlugin::RegisterFunctions() {
++    DynRpg::RegisterFunction("marbleen_save", MarbleenLoadSavePlugin_save);
++    DynRpg::RegisterFunction("marbleen_load", MarbleenLoadSavePlugin_load);
++    DynRpg::RegisterFunction("marbleen_savegetvar", MarbleenLoadSavePlugin_savegetvar);
++}
++
++//=================================================================================
+\ No newline at end of file
+diff --git a/src/dynrpg_marbleenloadsave.h b/src/dynrpg_marbleenloadsave.h
+new file mode 100644
+index 00000000..d7dc2be8
+--- /dev/null
++++ b/src/dynrpg_marbleenloadsave.h
+@@ -0,0 +1,24 @@
++
++#ifndef DISTURBO_PLAYER_DYNRPG_MARBLEENLOADSAVE_H
++#define DISTURBO_PLAYER_DYNRPG_MARBLEENLOADSAVE_H
++
++#include "dynrpg.h"
++
++namespace DynRpg {
++
++    class MarbleenLoadSavePlugin : public DynRpgPlugin {
++    public:
++        MarbleenLoadSavePlugin() : DynRpgPlugin("MarbleenLoadSavePlugin") {}
++
++        /**
++         * Define las funciones que puede llamar via comment.
++         */
++        void RegisterFunctions() override;
++
++
++        //void Load(const std::vector<uint8_t>& buffer) override;
++        //std::vector<uint8_t> Save() override;
++    };
++}
++
++#endif //DISTURBO_PLAYER_DYNRPG_MARBLEENLOADSAVE_H
+-- 
+2.27.0.windows.1
+
+
+From 3ff5db42feb06f6d39cfadad2ac4e64e1e351807 Mon Sep 17 00:00:00 2001
+From: elsemieni <elsemi.en.i@gmail.com>
+Date: Sun, 31 Jan 2021 01:13:27 -0300
+Subject: [PATCH 2/2] Add plugin in cmake
+
+---
+ CMakeLists.txt | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index b7a49891..e77fb0b9 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -102,6 +102,8 @@ add_library(${PROJECT_NAME} STATIC
+ 	src/dynrpg.h
+ 	src/dynrpg_easyrpg.cpp
+ 	src/dynrpg_easyrpg.h
++	src/dynrpg_marbleenloadsave.cpp
++	src/dynrpg_marbleenloadsave.h
+ 	src/enemyai.cpp
+ 	src/enemyai.h
+ 	src/exe_reader.cpp
+-- 
+2.27.0.windows.1
+

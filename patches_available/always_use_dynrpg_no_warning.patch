@@ -1,0 +1,30 @@
+From 1f682672d8419904006756e30224a391724466b8 Mon Sep 17 00:00:00 2001
+From: elsemieni <elsemi.en.i@gmail.com>
+Date: Sat, 30 Jan 2021 23:05:57 -0300
+Subject: [PATCH] Always use dynrpg no warning
+
+---
+ src/player.cpp | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/src/player.cpp b/src/player.cpp
+index 29df78e5..9b49b2b7 100644
+--- a/src/player.cpp
++++ b/src/player.cpp
+@@ -766,10 +766,11 @@ void Player::CreateGameObjects() {
+ 
+ 	FileFinder::InitRtpPaths(no_rtp_flag, no_rtp_warning_flag);
+ 
+-	if (!FileFinder::FindDefault("dynloader.dll").empty()) {
++	/*if (!FileFinder::FindDefault("dynloader.dll").empty()) {
+ 		patch |= PatchDynRpg;
+ 		Output::Warning("This game uses DynRPG and will not run properly.");
+-	}
++	}*/
++    patch |= PatchDynRpg;
+ 
+ 	if (!FileFinder::FindDefault("accord.dll").empty()) {
+ 		patch |= PatchManiac;
+-- 
+2.27.0.windows.1
+

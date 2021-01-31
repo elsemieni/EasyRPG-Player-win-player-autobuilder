@@ -1,0 +1,50 @@
+From 9056192eb0331239df81b53dddd0b6354f21f0fa Mon Sep 17 00:00:00 2001
+From: elsemieni <elsemi.en.i@gmail.com>
+Date: Sat, 30 Jan 2021 23:29:31 -0300
+Subject: [PATCH] Disable plugin
+
+---
+ CMakeLists.txt | 4 ++--
+ src/dynrpg.cpp | 4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index b7a49891..d551731d 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -100,8 +100,8 @@ add_library(${PROJECT_NAME} STATIC
+ 	src/drawable_mgr.h
+ 	src/dynrpg.cpp
+ 	src/dynrpg.h
+-	src/dynrpg_easyrpg.cpp
+-	src/dynrpg_easyrpg.h
++	# src/dynrpg_easyrpg.cpp
++	# src/dynrpg_easyrpg.h
+ 	src/enemyai.cpp
+ 	src/enemyai.h
+ 	src/exe_reader.cpp
+diff --git a/src/dynrpg.cpp b/src/dynrpg.cpp
+index b2137bbe..00706dfa 100644
+--- a/src/dynrpg.cpp
++++ b/src/dynrpg.cpp
+@@ -24,7 +24,7 @@
+ #include "output.h"
+ #include "player.h"
+ 
+-#include "dynrpg_easyrpg.h"
++// #include "dynrpg_easyrpg.h"
+ 
+ #include <cstring>
+ #include <fstream>
+@@ -183,7 +183,7 @@ static std::string ParseToken(const std::string& token, const std::string& funct
+ }
+ 
+ void create_all_plugins() {
+-	plugins.emplace_back(new DynRpg::EasyRpgPlugin());
++	// plugins.emplace_back(new DynRpg::EasyRpgPlugin());
+ 
+ 	for (auto& plugin : plugins) {
+ 		plugin->RegisterFunctions();
+-- 
+2.27.0.windows.1
+

@@ -1,0 +1,26 @@
+From b127c74f39cdaee5d969f9b16db7359ba414f9e7 Mon Sep 17 00:00:00 2001
+From: elsemieni <elsemi.en.i@gmail.com>
+Date: Sat, 30 Jan 2021 23:22:49 -0300
+Subject: [PATCH] Always 2k3e
+
+---
+ src/player.cpp | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/src/player.cpp b/src/player.cpp
+index 29df78e5..ef772e1a 100644
+--- a/src/player.cpp
++++ b/src/player.cpp
+@@ -727,7 +727,8 @@ void Player::CreateGameObjects() {
+ 		if (lcf::Data::system.ldb_id == 2003) {
+ 			engine = EngineRpg2k3;
+ 
+-			if (FileFinder::FindDefault("ultimate_rt_eb.dll").empty()) {
++			if(false) {
++			//if (FileFinder::FindDefault("ultimate_rt_eb.dll").empty()) {
+ 				// Heuristic: Detect if game was converted from 2000 to 2003 and
+ 				// no typical 2003 feature was used at all (breaks .flow e.g.)
+ 				if (lcf::Data::classes.size() == 1 &&
+-- 
+2.27.0.windows.1
+
